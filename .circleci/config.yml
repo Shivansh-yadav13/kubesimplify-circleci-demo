@@ -1,0 +1,35 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.0.2
+  aws-cli: circleci/aws-cli@3.1.0
+
+jobs:
+  build_lint_test:
+    docker:
+      - image: circleci/node:latest
+    steps:
+      - checkout
+      - node/install-packages
+      - run:
+          name: Run lint
+          command: npm run lint
+      - run:
+          name: Run tests
+          command: npm test
+  deploy:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup
+      - run:
+          name: AWS Sync
+          command: aws s3 sync . s3://node-circleci-demo
+
+workflows:
+  build_test_deploy:
+    jobs:
+      - build_lint_test
+      - deploy:
+          requires:
+            - build_lint_test
